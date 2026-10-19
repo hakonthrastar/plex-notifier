@@ -3,9 +3,9 @@
 import { drizzle } from "drizzle-orm/libsql";
 import * as schema from "./schema.ts";
 
-export function createDb() {
+export function createDb(url = process.env.DATABASE_URL ?? "file:data/app.db") {
   return drizzle({
-    connection: { url: process.env.DATABASE_URL ?? "file:data/app.db" },
+    connection: { url },
     schema,
   });
 }
