@@ -44,5 +44,6 @@ next-env.d.ts
 # claude code worktrees
 /.claude/worktrees/
 
-# local sqlite database
-/data/
+# local sqlite database (the folder itself is kept, since SQLite won't create it)
+/data/*
+!/data/.gitkeep
