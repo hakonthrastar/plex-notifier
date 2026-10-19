@@ -2,19 +2,14 @@ import "server-only";
 import { and, asc, eq, like, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { follows, shows } from "@/db/schema";
-import { connect, listShows, listSharedServers } from "@/lib/plex";
+import { connectToSharedServer, listShows } from "@/lib/plex";
 
 /** Fetches every show from the shared Plex server and upserts it into the cache. */
 export async function syncShowsFromPlex() {
   const token = process.env.PLEX_TOKEN;
   if (!token) throw new Error("PLEX_TOKEN is not set");
 
-  const servers = await listSharedServers(token);
-  const wanted = process.env.PLEX_SERVER_NAME;
-  const match = wanted ? servers.find((s) => s.name === wanted) : servers[0];
-  if (!match) throw new Error(wanted ? `No shared server named "${wanted}"` : "No shared Plex servers found");
-
-  const server = await connect(match);
+  const server = await connectToSharedServer(token, process.env.PLEX_SERVER_NAME);
   const fetched = await listShows(server);
   const syncedAt = new Date();
 

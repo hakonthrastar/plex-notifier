@@ -1,6 +1,8 @@
 // Minimal client for the Plex APIs this app needs.
 // plex.tv tells us which servers are shared with us; each server is then queried directly.
 
+import type { PlexEpisodeMetadata } from "./new-episodes.ts";
+
 const PLEX_TV = "https://plex.tv";
 const CONNECT_TIMEOUT_MS = 5000;
 
@@ -95,14 +97,43 @@ export async function connect(server: PlexServer): Promise<ConnectedServer> {
   throw new Error(`Could not reach server "${server.name}" on any of its ${ordered.length} connections`);
 }
 
+/**
+ * Connects to the shared server named by PLEX_SERVER_NAME, or the first one shared
+ * with the account if that isn't set.
+ */
+export async function connectToSharedServer(accountToken: string, name?: string): Promise<ConnectedServer> {
+  const servers = await listSharedServers(accountToken);
+  const match = name ? servers.find((s) => s.name === name) : servers[0];
+  if (!match) throw new Error(name ? `No shared server named "${name}"` : "No shared Plex servers found");
+  return connect(match);
+}
+
 type Container<T> = { MediaContainer: T };
 
-export async function listShows(server: ConnectedServer): Promise<Show[]> {
+async function listShowSections(server: ConnectedServer) {
   const { MediaContainer } = await getJson<Container<{ Directory?: { key: string; type: string }[] }>>(
     `${server.uri}/library/sections`,
     server.accessToken,
   );
-  const showSections = (MediaContainer.Directory ?? []).filter((d) => d.type === "show");
+  return (MediaContainer.Directory ?? []).filter((d) => d.type === "show");
+}
+
+/** The most recently added episodes in each TV section, newest first. */
+export async function listRecentEpisodes(server: ConnectedServer, perSection = 100): Promise<PlexEpisodeMetadata[]> {
+  const episodes: PlexEpisodeMetadata[] = [];
+  for (const section of await listShowSections(server)) {
+    const { MediaContainer } = await getJson<Container<{ Metadata?: PlexEpisodeMetadata[] }>>(
+      `${server.uri}/library/sections/${section.key}/all?type=4&sort=addedAt:desc` +
+        `&X-Plex-Container-Start=0&X-Plex-Container-Size=${perSection}`,
+      server.accessToken,
+    );
+    episodes.push(...(MediaContainer.Metadata ?? []));
+  }
+  return episodes;
+}
+
+export async function listShows(server: ConnectedServer): Promise<Show[]> {
+  const showSections = await listShowSections(server);
 
   const shows: Show[] = [];
   for (const section of showSections) {

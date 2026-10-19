@@ -15,6 +15,8 @@ Built to practise AI-assisted development with professional habits.
 - `npm run build`: must pass before committing
 - `npm run db:generate` after changing `src/db/schema.ts`, then `npm run db:migrate`
 - `npm run people:add -- "Name" email`: invite someone from the command line
+- `npm test`: unit tests (Vitest); must pass before committing
+- `npm run check`: run one new-episode check by hand (records new episodes, queues notifications)
 - `npm run plex:check`: check the Plex connection
 
 Settings live in `.env.local`; `.env.example` lists them.
@@ -23,6 +25,8 @@ Settings live in `.env.local`; `.env.example` lists them.
 - Pages read the DB and session inside `<Suspense>`; data isn't cached, actions call `refresh()`.
 - Every server action calls `requireUser()` first: actions are reachable over plain HTTP.
 - Scripts run by plain Node use `src/db/client.ts`; app code uses `@/db` (server-only).
+- Decision logic stays pure and tested (`src/lib/new-episodes.ts`); write the test first when changing a rule.
+- Episodes are identified by show + season + number (`episodeKey`), not Plex's ratingKey, which changes on file upgrades.
 
 ## Working rules
 - Plan before building: for anything bigger than a small fix, agree on a plan first.

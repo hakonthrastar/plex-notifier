@@ -90,5 +90,35 @@ export const follows = sqliteTable(
   (t) => [primaryKey({ columns: [t.userId, t.showRatingKey] })],
 );
 
+// Every episode the check job has detected, keyed by episodeKey() from lib/new-episodes.
+export const seenEpisodes = sqliteTable("seen_episodes", {
+  key: text("key").primaryKey(),
+  ratingKey: text("rating_key").notNull(),
+  showRatingKey: text("show_rating_key").notNull(),
+  showTitle: text("show_title").notNull(),
+  season: integer("season"),
+  episode: integer("episode"),
+  title: text("title").notNull(),
+  addedAt: integer("added_at", { mode: "timestamp" }).notNull(),
+  seenAt: integer("seen_at", { mode: "timestamp" }).notNull(),
+});
+
+// Queue of "tell this person about this episode". sentAt stays null until the
+// email goes out, so a failed send is retried on the next run instead of lost.
+export const deliveries = sqliteTable(
+  "deliveries",
+  {
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    episodeKey: text("episode_key")
+      .notNull()
+      .references(() => seenEpisodes.key, { onDelete: "cascade" }),
+    createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+    sentAt: integer("sent_at", { mode: "timestamp" }),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.episodeKey] }), index("deliveries_unsent_idx").on(t.sentAt)],
+);
+
 export type User = typeof user.$inferSelect;
 export type CachedShow = typeof shows.$inferSelect;
