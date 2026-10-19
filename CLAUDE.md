@@ -1,15 +1,28 @@
 # vibecode-lab
 
-A small full-stack Next.js app, built to practise AI-assisted development with professional habits.
+Plex Notifier: emails invited people when new episodes of shows they follow appear on a Plex server shared with us.
+Built to practise AI-assisted development with professional habits.
 
 ## Stack
-- Next.js (App Router, `src/app`), TypeScript, Tailwind CSS, ESLint
+- Next.js 16 (App Router, `src/app`, Cache Components on), TypeScript, Tailwind CSS, ESLint
+- SQLite via Drizzle ORM + libSQL (`src/db`), migrations in `drizzle/`
+- Better Auth with invite-only magic-link login (`src/lib/auth.ts`), email via Resend
 - Node 24 (see `.nvmrc`; run `nvm use` in this folder)
 
 ## Commands
-- `npm run dev`: dev server at http://localhost:3000
+- `npm run dev`: dev server at http://localhost:3000 (sign-in links are also printed to the console)
 - `npm run lint`: must pass before committing
 - `npm run build`: must pass before committing
+- `npm run db:generate` after changing `src/db/schema.ts`, then `npm run db:migrate`
+- `npm run people:add -- "Name" email`: invite someone from the command line
+- `npm run plex:check`: check the Plex connection
+
+Settings live in `.env.local`; `.env.example` lists them.
+
+## Conventions
+- Pages read the DB and session inside `<Suspense>`; data isn't cached, actions call `refresh()`.
+- Every server action calls `requireUser()` first: actions are reachable over plain HTTP.
+- Scripts run by plain Node use `src/db/client.ts`; app code uses `@/db` (server-only).
 
 ## Working rules
 - Plan before building: for anything bigger than a small fix, agree on a plan first.

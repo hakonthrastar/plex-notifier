@@ -1,69 +1,99 @@
-import Image from "next/image";
+import Form from "next/form";
+import { Suspense } from "react";
+import { toggleFollow } from "@/app/actions";
+import { AppShell } from "@/app/app-shell";
+import { SyncButton } from "@/app/sync-button";
+import { requireUser } from "@/lib/auth";
+import { lastSyncedAt, listShowsForUser, type ShowRow } from "@/lib/shows";
 
-export default function Home() {
+export default function ShowsPage(props: PageProps<"/">) {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <AppShell>
+      <Suspense fallback={<p className="text-sm text-zinc-500">Loading shows…</p>}>
+        <Shows searchParams={props.searchParams} />
+      </Suspense>
+    </AppShell>
+  );
+}
+
+async function Shows({ searchParams }: { searchParams: PageProps<"/">["searchParams"] }) {
+  const me = await requireUser();
+  const { q } = await searchParams;
+  const query = typeof q === "string" ? q.trim() : "";
+
+  const [rows, syncedAt] = await Promise.all([listShowsForUser(me.id, query), lastSyncedAt()]);
+
+  if (!syncedAt) {
+    return (
+      <section className="flex flex-col items-start gap-3">
+        <p>No shows yet. Fetch the show list from the Plex server to get started.</p>
+        <SyncButton />
+      </section>
+    );
+  }
+
+  const followed = rows.filter((r) => r.followed);
+  const others = rows.filter((r) => !r.followed);
+
+  return (
+    <div className="flex flex-col gap-8">
+      <section className="flex flex-wrap items-center justify-between gap-3">
+        <Form action="/" className="flex flex-1 gap-2">
+          <input
+            name="q"
+            defaultValue={query}
+            placeholder="Search shows"
+            className="w-full rounded-md border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
+          />
+          <button className="rounded-md border border-zinc-300 px-3 py-2 dark:border-zinc-700">Search</button>
+        </Form>
+        <div className="flex items-center gap-3 text-xs text-zinc-500 dark:text-zinc-400">
+          <span>Synced {syncedAt.toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" })}</span>
+          <SyncButton />
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+      </section>
+
+      <ShowList title={`Following (${followed.length})`} rows={followed} empty="You're not following any shows yet." />
+      <ShowList
+        title={query ? `Results for "${query}" (${others.length})` : `All shows (${others.length})`}
+        rows={others}
+        empty="No shows match."
+      />
     </div>
+  );
+}
+
+function ShowList({ title, rows, empty }: { title: string; rows: ShowRow[]; empty: string }) {
+  return (
+    <section>
+      <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">{title}</h2>
+      {rows.length === 0 ? (
+        <p className="text-sm text-zinc-500">{empty}</p>
+      ) : (
+        <ul className="divide-y divide-zinc-200 rounded-md border border-zinc-200 bg-white dark:divide-zinc-800 dark:border-zinc-800 dark:bg-zinc-900">
+          {rows.map((show) => (
+            <li key={show.ratingKey} className="flex items-center justify-between gap-3 px-3 py-2">
+              <span>
+                {show.title}
+                {show.year && <span className="ml-1 text-zinc-500">({show.year})</span>}
+              </span>
+              <form action={toggleFollow}>
+                <input type="hidden" name="ratingKey" value={show.ratingKey} />
+                <input type="hidden" name="follow" value={String(!show.followed)} />
+                <button
+                  className={
+                    show.followed
+                      ? "rounded-md bg-zinc-900 px-3 py-1 text-sm text-white dark:bg-zinc-100 dark:text-zinc-900"
+                      : "rounded-md border border-zinc-300 px-3 py-1 text-sm dark:border-zinc-700"
+                  }
+                >
+                  {show.followed ? "Following" : "Follow"}
+                </button>
+              </form>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   );
 }
