@@ -17,9 +17,15 @@ Built to practise AI-assisted development with professional habits.
 - `npm run people:add -- "Name" email`: invite someone from the command line
 - `npm test`: unit tests (Vitest); must pass before committing
 - `npm run check`: run one new-episode check and email the digests (exits non-zero if an email failed)
+- `npm run worker`: run the check every `CHECK_INTERVAL_MINUTES` (what the `worker` container does)
 - `npm run plex:check`: check the Plex connection
 
 Settings live in `.env.local`; `.env.example` lists them.
+
+## Deployment
+Docker Compose on a Proxmox VM: `app`, `worker` and `caddy` (HTTPS), one image built and published to
+GHCR by CI on merges to `main`. Steps and updates: `docs/deploy.md`. The app migrates on start,
+so schema changes need no manual steps. The build must not need real secrets or a database.
 
 ## Conventions
 - Pages read the DB and session inside `<Suspense>`; data isn't cached, actions call `refresh()`.

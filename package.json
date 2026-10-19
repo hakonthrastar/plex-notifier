@@ -7,13 +7,14 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "plex:check": "node --env-file=.env.local scripts/plex-check.ts",
+    "plex:check": "node --env-file-if-exists=.env.local scripts/plex-check.ts",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate",
-    "people:add": "node --env-file=.env.local scripts/add-person.ts",
+    "db:migrate": "node --env-file-if-exists=.env.local scripts/migrate.ts",
+    "people:add": "node --env-file-if-exists=.env.local scripts/add-person.ts",
     "test": "vitest run",
     "test:watch": "vitest",
-    "check": "node --env-file=.env.local scripts/check.ts"
+    "check": "node --env-file-if-exists=.env.local scripts/check.ts",
+    "worker": "node --env-file-if-exists=.env.local scripts/worker.ts"
   },
   "dependencies": {
     "@libsql/client": "^0.18.0",
