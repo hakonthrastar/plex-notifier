@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "plex:check": "node --env-file=.env.local scripts/plex-check.ts"
   },
   "dependencies": {
     "next": "16.4.2",
@@ -22,5 +23,6 @@
     "eslint-config-next": "16.4.2",
     "tailwindcss": "^4",
     "typescript": "^5"
-  }
+  },
+  "type": "module"
 }
