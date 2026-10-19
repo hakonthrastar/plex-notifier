@@ -1,0 +1,12 @@
+.git
+.github
+.claude
+.next
+node_modules
+data
+.env*
+!.env.example
+*.tsbuildinfo
+npm-debug.log*
+docker-compose.yml
+Dockerfile

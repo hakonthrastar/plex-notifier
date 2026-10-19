@@ -1,0 +1,47 @@
+# Production setup for the home server. See docs/deploy.md.
+# Settings come from a .env file next to this file (copy .env.example).
+# Only Caddy publishes ports (80/443); the app is reachable only through it.
+
+services:
+  app:
+    image: ghcr.io/hakonthrastar/vibecode-lab:latest
+    env_file: .env
+    volumes:
+      - data:/app/data
+    restart: unless-stopped
+
+  worker:
+    image: ghcr.io/hakonthrastar/vibecode-lab:latest
+    command: ["node", "scripts/worker.ts"]
+    env_file: .env
+    volumes:
+      - data:/app/data
+    healthcheck:
+      disable: true
+    depends_on:
+      app:
+        condition: service_healthy # the app runs the migrations first
+    restart: unless-stopped
+
+  # HTTPS in front of the app, with certificates from Let's Encrypt renewed automatically.
+  caddy:
+    image: caddy:2.11.7
+    ports:
+      - "80:80" # needed for the Let's Encrypt challenge and the redirect to https
+      - "443:443"
+      - "443:443/udp" # HTTP/3
+    environment:
+      APP_DOMAIN: ${APP_DOMAIN:?set APP_DOMAIN in .env}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data # certificates; keep this volume or Let's Encrypt limits may bite
+      - caddy_config:/config
+    depends_on:
+      app:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  data:
+  caddy_data:
+  caddy_config:
