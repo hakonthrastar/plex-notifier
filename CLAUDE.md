@@ -23,9 +23,11 @@ Built to practise AI-assisted development with professional habits.
 Settings live in `.env.local`; `.env.example` lists them.
 
 ## Deployment
-Docker Compose on a Proxmox VM: `app`, `worker` and `caddy` (HTTPS), one image built and published to
-GHCR by CI on merges to `main`. Steps and updates: `docs/deploy.md`. The app migrates on start,
-so schema changes need no manual steps. The build must not need real secrets or a database.
+Docker Compose on a Proxmox VM: `app` (plain HTTP on 3000) and `worker`, one image built and published
+to GHCR by CI on merges to `main`. TLS is deliberately out of scope: the owner's own reverse proxy
+terminates HTTPS, so don't add certificate handling to the app. Steps and updates: `docs/deploy.md`.
+The app migrates on start, so schema changes need no manual steps. The build must not need real
+secrets or a database.
 
 ## Conventions
 - Pages read the DB and session inside `<Suspense>`; data isn't cached, actions call `refresh()`.
