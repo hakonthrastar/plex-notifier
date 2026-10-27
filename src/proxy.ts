@@ -5,7 +5,8 @@ import { NextResponse, type NextRequest } from "next/server";
 // exists, not that it's valid; pages and actions still verify with requireUser().
 export function proxy(request: NextRequest) {
   if (!getSessionCookie(request)) {
-    return NextResponse.redirect(new URL("/login", request.url));
+    // Behind a reverse proxy request.url is the internal address, so use the public one.
+    return NextResponse.redirect(new URL("/login", process.env.BETTER_AUTH_URL ?? request.url));
   }
   return NextResponse.next();
 }
