@@ -11,7 +11,7 @@ TLS is **not** part of this setup. Your own reverse proxy (with your NAT/port fo
 terminates HTTPS and forwards plain HTTP to the VM.
 
 Images are built by GitHub Actions on every merge to `main` and published to
-`ghcr.io/hakonthrastar/vibecode-lab`. The server only pulls them.
+`ghcr.io/hakonthrastar/plex-notifier`. The server only pulls them.
 
 ## 1. Create the VM (Proxmox)
 

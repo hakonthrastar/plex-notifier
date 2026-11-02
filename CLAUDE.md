@@ -1,4 +1,4 @@
-# vibecode-lab
+# plex-notifier
 
 Plex Notifier: emails invited people when new episodes of shows they follow appear on a Plex server shared with us.
 Built to practise AI-assisted development with professional habits.

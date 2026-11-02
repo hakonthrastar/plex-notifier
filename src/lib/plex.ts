@@ -42,7 +42,7 @@ function headers(token: string): HeadersInit {
   return {
     Accept: "application/json",
     "X-Plex-Token": token,
-    "X-Plex-Product": "vibecode-lab",
+    "X-Plex-Product": "Plex Notifier",
     "X-Plex-Client-Identifier": "vibecode-lab-plex-notifier",
   };
 }
